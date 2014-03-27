@@ -100,7 +100,7 @@ class Phergie_Plugin_Weather extends Phergie_Plugin_Abstract_Command
             $weather .= 'Current conditions: ' . $xml->cc->t . ', ';
             $weather .= 'Last update: ' . $xml->cc->lsup;
         } else {
-            $weather = 'No results for that location.';
+            $weather = 'No results for that location. (Did you use separator chars? Don\'t do that.)';
         }
 
         $this->doPrivmsg($this->event->getSource(), $target . ': ' . $weather);
