@@ -2,6 +2,30 @@
 
 	class Phergie_Plugin_Habari extends Phergie_Plugin_Abstract
 	{
+		/**
+		* GitHub API Client ID
+		*
+		* @var string
+		*/
+		protected $clientId;
+
+		/**
+		* GitHub API Client Secret
+		*
+		* @var string
+		*/
+		protected $clientSecret;
+
+		/**
+		* Obtains configuration settings used for web service authentication.
+		*
+		* @return void
+		*/
+		public function onInit()
+		{
+			$this->clientId = $this->getPluginIni('client_id');
+			$this->clientSecret = $this->getPluginIni('client_secret');
+		}
 		public function onDoWa($question)
 		{
 			$url = sprintf('http://tumbolia.appspot.com/wa/%s', urlencode($question));
@@ -51,26 +75,31 @@
 			return $this->wikiSearch($search);
 		}
 		
-		public function onCommandRev ( $extras = '' ) {
-			$this->doPrivmsg($this->getEvent()->getSource(), "Functionality currently broken"); return;
+		protected function latestCommit()
+		{
+			$source = $this->event->getSource();
+			$nick = $this->event->getNick();
+			$url = "https://api.github.com/repos/habari/system/commits?client_id=" . $this->clientId . "&client_secret=" . $this->clientSecret;
 			
-			if ( $extras == 'extras' ) {
-				$url = 'habari-extras';
-				$name = 'Extras';
-			}
-			else {
-				$url = 'habari';
-				$name = 'Core';
-			}
+			$ch = curl_init();
+			curl_setopt($ch, CURLOPT_URL, $url);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+			curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13');
+			$contents = curl_exec($ch);
+			curl_close($ch);
 			
-			$url = 'http://svn.habariproject.org/' . $url;
-			
-			$info = shell_exec( 'svn info ' . $url );
-			
-			preg_match( '/Revision: (\d+)/i', $info, $m );
-			
-			$this->doPrivmsg( $this->getEvent()->getSource(), $this->getEvent()->getNick() . ': Current ' . $name . ' Revision: ' . $m[1] );
-			
+			$commits = json_decode($contents);
+			$msg = $nick . ': Latest commit was ' . $commits[0]->sha . " by " . $commits[0]->commit->author->name . ":" .$commits[0]->commit->message . " " . $commits[0]->url;
+			$this->doPrivmsg($source, $msg);
+		}
+		
+		public function onCommandRev()
+		{
+			return $this->latestCommit();
+		}
+		public function onCommandHead()
+		{
+			return $this->latestCommit();
 		}
 		
 		public function onCommandTranslation ( $language )
