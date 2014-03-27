@@ -94,7 +94,7 @@
 			$url = "https://api.github.com/repos/habari/system/commits";
 			$commits = $this->grabGitHub($url);
 
-			$msg = $nick . ': Latest commit was ' . $commits[0]->sha . " by " . $commits[0]->commit->author->name . ":" .$commits[0]->commit->message . " " . $commits[0]->url;
+			$msg = $nick . ': Latest commit was ' . $commits[0]->sha . " by " . $commits[0]->commit->author->name . ":" .$commits[0]->commit->message . " " . $commits[0]->html_url;
 			$this->doPrivmsg($source, $msg);
 		}
 		
