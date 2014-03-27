@@ -75,20 +75,25 @@
 			return $this->wikiSearch($search);
 		}
 		
-		protected function latestCommit()
+		protected function grabGitHub($url)
 		{
-			$source = $this->event->getSource();
-			$nick = $this->event->getNick();
-			$url = "https://api.github.com/repos/habari/system/commits?client_id=" . $this->clientId . "&client_secret=" . $this->clientSecret;
-			
+			$url .= "?client_id=" . $this->clientId . "&client_secret=" . $this->clientSecret;
 			$ch = curl_init();
 			curl_setopt($ch, CURLOPT_URL, $url);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 			curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13');
 			$contents = curl_exec($ch);
 			curl_close($ch);
-			
-			$commits = json_decode($contents);
+			return json_decode($contents);
+		}
+		
+		protected function latestCommit()
+		{
+			$source = $this->event->getSource();
+			$nick = $this->event->getNick();
+			$url = "https://api.github.com/repos/habari/system/commits";
+			$commits = $this->grabGitHub($url);
+
 			$msg = $nick . ': Latest commit was ' . $commits[0]->sha . " by " . $commits[0]->commit->author->name . ":" .$commits[0]->commit->message . " " . $commits[0]->url;
 			$this->doPrivmsg($source, $msg);
 		}
@@ -123,6 +128,23 @@
 			
 			$this->doPrivmsg( $chan, $msg );
 			
+		}
+		
+		// Stuff derived from any message
+		public function onPrivmsg()
+		{
+			$in = $this->event->getArgument(1);
+			$chan = $this->getEvent()->getSource();
+			$nick = $this->getEvent()->getNick();
+			
+			// GitHub Issues
+			preg_match("/#([0-9]+)/", $in, $match);
+			if(count($match)) {
+				$n = $match[1];
+				$issue = $this->grabGitHub("https://api.github.com/repos/habari/habari/issues/$n");
+				$msg = "#$n: " . $issue->title . " (" . $issue->state . ") " . $issue->html_url;
+				$this->doPrivmsg( $chan, $msg );
+			}
 		}
 		
 	}
