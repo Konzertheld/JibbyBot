@@ -94,7 +94,8 @@
 			$url = "https://api.github.com/repos/habari/system/commits";
 			$commits = $this->grabGitHub($url);
 
-			$msg = $nick . ': Latest commit was ' . $commits[0]->sha . " by " . $commits[0]->commit->author->name . ":" .$commits[0]->commit->message . " " . $commits[0]->html_url;
+			$date = new DateTime($commits[0]->commit->committer->date); // yeah, really, you can't access ->format on the fly below
+			$msg = "Latest commit: " . $commits[0]->sha . " by " . $commits[0]->commit->author->name . ": " .$commits[0]->commit->message . " (" . $date->format("Y-m-d") . ") " . $commits[0]->html_url;
 			$this->doPrivmsg($source, $msg);
 		}
 		
